@@ -1,4 +1,4 @@
-use sdl2::{event::Event, keyboard::Keycode};
+use sdl2::{event::Event, keyboard::Keycode, rect::Rect};
 
 fn start_game() {
     println!("starting game")
@@ -9,7 +9,7 @@ pub fn main() -> Result<(), String> {
     let video_subsystem = sdl_context.video()?;
 
     let window = video_subsystem
-        .window("rust-sdl2 example", 800, 600)
+        .window("cool war game", 1280, 720)
         .opengl()
         .build()
         .map_err(|e| e.to_string())?;
@@ -41,6 +41,13 @@ pub fn main() -> Result<(), String> {
                 _ => {}
             }
         }
+
+        canvas.clear();
+
+        canvas.draw_rect(Rect::new(0, 0, 1280, 720))?;
+
+        canvas.present();
     }
+
     Ok(())
 }
