@@ -1,11 +1,11 @@
-use sdl2::{event::Event, keyboard::Keycode, rect::Rect, VideoSubsystem};
+use sdl2::{event::Event, keyboard::Keycode, rect::Rect};
 
 mod engine;
 use engine::*;
 
 fn main() -> Result<(), String> {
     let context: sdl2::Sdl = sdl2::init().unwrap();
-    let subsystem: VideoSubsystem = context.video().unwrap();
+    let subsystem = context.video().unwrap();
     let mut events = context.event_pump()?;
 
     let mut game = Game::new();
@@ -47,6 +47,7 @@ fn main() -> Result<(), String> {
         }
 
         let mouse = events.mouse_state();
+        let mut current_multiplier = 1.0;
         for event in events.poll_iter() {
             match event {
                 Event::Quit { .. } => game.running = false,
@@ -57,22 +58,24 @@ fn main() -> Result<(), String> {
                 } => match keycode {
                     Keycode::Space => {}
                     Keycode::T => println!("timestamp: {}", timestamp),
+                    Keycode::Escape => game.running = false,
                     _ => {}
                 },
                 Event::MouseWheel { y, .. } => {
-                    let hori_ratio = mouse.x() as u32 / map.rect.width();
-                    let vert_ratio = mouse.y() as u32 / map.rect.height();
+                    let multiplier = if y > 0 { 2.0 } else { 1.0 / 2.0 };
+                    current_multiplier *= multiplier;
 
-                    if y > 0 {
-                        map.rect.set_width((map.rect.width() as f32 * 1.5) as u32);
-                        map.rect.set_height((map.rect.height() as f32 * 1.5) as u32);
-                    } else {
-                        map.rect.set_width((map.rect.width() as f32 / 1.5) as u32);
-                        map.rect.set_height((map.rect.height() as f32 / 1.5) as u32);
-                    }
+                    map.rect
+                        .set_width((map.rect.width() as f32 * multiplier) as u32);
+                    map.rect
+                        .set_height((map.rect.height() as f32 * multiplier) as u32);
 
-                    map.rect.set_x((map.rect.width() * hori_ratio) as i32);
-                    map.rect.set_y((map.rect.height() * vert_ratio) as i32);
+                    map.rect.set_x(
+                        (map.rect.x() as f32 - mouse.x() as f32 * current_multiplier * 0.5) as i32,
+                    );
+                    map.rect.set_y(
+                        (map.rect.y() as f32 - mouse.y() as f32 * current_multiplier * 0.5) as i32,
+                    );
                 }
                 _ => {}
             }

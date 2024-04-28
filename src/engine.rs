@@ -49,3 +49,7 @@ impl<'a> Sprite<'a> {
         canvas.copy(&self.texture, None, self.rect).unwrap();
     }
 }
+
+pub struct Text {
+    pub content: String,
+}
