@@ -1,53 +1,51 @@
-use sdl2::{event::Event, keyboard::Keycode, rect::Rect};
+use sdl2::{
+    gfx::framerate::FPSManager,
+    image::{InitFlag, LoadTexture, Sdl2ImageContext},
+    rect::Rect,
+    render::{Texture, TextureCreator, WindowCanvas},
+    video::WindowContext,
+};
 
-fn start_game() {
-    println!("starting game")
+pub struct Game {
+    pub running: bool,
+    pub framerate: FPSManager,
+    pub image_context: Sdl2ImageContext,
 }
 
-pub fn main() -> Result<(), String> {
-    let sdl_context = sdl2::init()?;
-    let video_subsystem = sdl_context.video()?;
+impl Game {
+    pub fn new() -> Self {
+        let mut framerate = FPSManager::new();
+        framerate.set_framerate(60).unwrap();
 
-    let window = video_subsystem
-        .window("cool war game", 1280, 720)
-        .opengl()
-        .build()
-        .map_err(|e| e.to_string())?;
-
-    let mut events = sdl_context.event_pump()?;
-    let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
-
-    'main: loop {
-        for event in events.poll_iter() {
-            match event {
-                Event::Quit { .. }
-                | Event::KeyDown {
-                    keycode: Some(Keycode::Escape),
-                    ..
-                } => break 'main,
-                _ => {}
-            }
-            match event {
-                Event::Quit { .. } => break 'main,
-                Event::KeyDown {
-                    keycode: Some(keycode),
-                    timestamp,
-                    ..
-                } => match keycode {
-                    Keycode::Space => start_game(),
-                    Keycode::T => println!("timestamp: {}", timestamp),
-                    _ => {}
-                },
-                _ => {}
-            }
+        Self {
+            running: true,
+            framerate,
+            image_context: sdl2::image::init(InitFlag::PNG | InitFlag::JPG).unwrap(),
         }
+    }
+}
 
-        canvas.clear();
+pub struct Sprite<'a> {
+    pub texture: Texture<'a>,
+    pub rect: Rect,
+}
 
-        canvas.draw_rect(Rect::new(0, 0, 1280, 720))?;
-
-        canvas.present();
+impl<'a> Sprite<'a> {
+    pub fn new(
+        texture_creator: &'a TextureCreator<WindowContext>,
+        x: i32,
+        y: i32,
+        w: u32,
+        h: u32,
+        img_path: &str,
+    ) -> Self {
+        Self {
+            texture: texture_creator.load_texture(img_path).unwrap(),
+            rect: Rect::new(x, y, w, h),
+        }
     }
 
-    Ok(())
+    pub fn render(&self, canvas: &mut WindowCanvas) {
+        canvas.copy(&self.texture, None, self.rect).unwrap();
+    }
 }
