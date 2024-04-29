@@ -1,15 +1,24 @@
 use sdl2::{
-    gfx::framerate::FPSManager,
-    image::{InitFlag, LoadTexture, Sdl2ImageContext},
+    gfx::{framerate::FPSManager, primitives::DrawRenderer},
+    image::{InitFlag, LoadSurface, LoadTexture, Sdl2ImageContext},
     rect::Rect,
-    render::{Texture, TextureCreator, WindowCanvas},
+    render::{SurfaceCanvas, Texture, TextureCreator, WindowCanvas},
+    surface::Surface,
     video::WindowContext,
 };
+
+pub enum State {
+    Menu,
+    Play,
+    SettingsMenu,
+    SettingsPlay,
+}
 
 pub struct Game {
     pub running: bool,
     pub framerate: FPSManager,
     pub image_context: Sdl2ImageContext,
+    pub state: State,
 }
 
 impl Game {
@@ -21,6 +30,7 @@ impl Game {
             running: true,
             framerate,
             image_context: sdl2::image::init(InitFlag::PNG | InitFlag::JPG).unwrap(),
+            state: State::Play,
         }
     }
 }
@@ -28,6 +38,7 @@ impl Game {
 pub struct Sprite<'a> {
     pub texture: Texture<'a>,
     pub rect: Rect,
+    textures: Option<Vec<Texture<'a>>>,
 }
 
 impl<'a> Sprite<'a> {
@@ -38,10 +49,21 @@ impl<'a> Sprite<'a> {
         w: u32,
         h: u32,
         img_path: &str,
+        frames: Option<u8>,
     ) -> Self {
         Self {
             texture: texture_creator.load_texture(img_path).unwrap(),
             rect: Rect::new(x, y, w, h),
+            textures: if frames == None {
+                None
+            } else {
+                let monolith = texture_creator.load_texture(img_path).unwrap();
+                let monolith_s = Surface::from_file("assets/title.png")
+                    .unwrap()
+                    .into_canvas()
+                    .unwrap();
+                None //placeholder
+            },
         }
     }
 

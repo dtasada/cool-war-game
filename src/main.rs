@@ -4,11 +4,10 @@ mod engine;
 use engine::*;
 
 fn main() -> Result<(), String> {
+    // Base SDL requirements
     let context: sdl2::Sdl = sdl2::init().unwrap();
     let subsystem = context.video().unwrap();
     let mut events = context.event_pump()?;
-
-    let mut game = Game::new();
 
     let window = subsystem
         .window("cool war game", 1280, 720)
@@ -26,6 +25,9 @@ fn main() -> Result<(), String> {
 
     let texture_creator = canvas.texture_creator();
 
+    // My engine init
+    let mut game = Game::new();
+
     let mut map = Sprite::new(
         &texture_creator,
         0,
@@ -33,7 +35,18 @@ fn main() -> Result<(), String> {
         canvas.output_size().unwrap().0,
         canvas.output_size().unwrap().1,
         "assets/map.jpg",
+        None,
     );
+
+    /* let mut title = Sprite::new(
+        &texture_creator,
+        0,
+        0,
+        canvas.output_size().unwrap().0,
+        canvas.output_size().unwrap().1,
+        "assets/title.png",
+        Some(110),
+    ); */
 
     while game.running {
         for key in events.keyboard_state().pressed_scancodes() {
@@ -47,7 +60,6 @@ fn main() -> Result<(), String> {
         }
 
         let mouse = events.mouse_state();
-        let mut current_multiplier = 1.0;
         for event in events.poll_iter() {
             match event {
                 Event::Quit { .. } => game.running = false,
@@ -63,19 +75,20 @@ fn main() -> Result<(), String> {
                 },
                 Event::MouseWheel { y, .. } => {
                     let multiplier = if y > 0 { 2.0 } else { 1.0 / 2.0 };
-                    current_multiplier *= multiplier;
+
+                    let og_width = map.rect.width() as f32;
+                    let og_height = map.rect.height() as f32;
+
+                    let ratio_x = mouse.x() as f32 / og_width;
+                    let ratio_y = mouse.y() as f32 / og_height;
+
+                    map.rect.set_width((og_width * multiplier) as u32);
+                    map.rect.set_height((og_height * multiplier) as u32);
 
                     map.rect
-                        .set_width((map.rect.width() as f32 * multiplier) as u32);
+                        .set_x((mouse.x() as f32 - map.rect.width() as f32 * ratio_x) as i32);
                     map.rect
-                        .set_height((map.rect.height() as f32 * multiplier) as u32);
-
-                    map.rect.set_x(
-                        (map.rect.x() as f32 - mouse.x() as f32 * current_multiplier * 0.5) as i32,
-                    );
-                    map.rect.set_y(
-                        (map.rect.y() as f32 - mouse.y() as f32 * current_multiplier * 0.5) as i32,
-                    );
+                        .set_y((mouse.y() as f32 - map.rect.height() as f32 * ratio_y) as i32);
                 }
                 _ => {}
             }
@@ -83,10 +96,18 @@ fn main() -> Result<(), String> {
 
         canvas.clear();
 
-        map.render(&mut canvas);
-
         canvas.set_draw_color((255, 255, 255, 255));
-        canvas.draw_rect(Rect::new(0, 0, 1280, 720))?;
+        canvas.fill_rect(Rect::new(0, 0, 1280, 720)).unwrap();
+
+        match game.state {
+            State::Menu => {
+                // title.render(&mut canvas);
+            }
+            State::Play => {
+                map.render(&mut canvas);
+            }
+            _ => {}
+        }
 
         canvas.present();
 
